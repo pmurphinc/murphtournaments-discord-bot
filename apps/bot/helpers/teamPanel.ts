@@ -79,7 +79,7 @@ export async function buildTeamPanel(
 
   if (!team) {
     const embed = new EmbedBuilder()
-      .setTitle("Development Division Team Panel")
+      .setTitle("Murph Tournaments Team Panel")
       .setDescription("No linked team was found for your account.");
 
     return {
@@ -232,7 +232,7 @@ export async function buildTeamPanel(
   }
 
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Team Panel")
+    .setTitle("Murph Tournaments Team Panel")
     .setDescription(
       options?.isAdminViewer
         ? `Admin view for ${team.teamName}.`

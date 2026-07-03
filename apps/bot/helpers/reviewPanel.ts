@@ -125,7 +125,7 @@ export async function buildReviewQueue(
 ) {
   const submissions = await listRegistrationsByStatus(statusFilter, 25);
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Review Queue")
+    .setTitle("Murph Tournaments Review Queue")
     .setDescription(
       submissions.length > 0
         ? `Select a ${statusFilter} team to review.`
@@ -356,7 +356,7 @@ export async function buildReviewPanel(
     return {
       embeds: [
         new EmbedBuilder()
-          .setTitle("Development Division Review")
+          .setTitle("Murph Tournaments Review")
           .setDescription(`No ${statusFilter} submissions found.`)
           .setFooter({
             text: `No ${statusFilter} submissions`,
@@ -392,7 +392,7 @@ export async function buildReviewPanel(
     effectiveIndex >= 0 && effectiveIndex < filteredSubmissions.length - 1;
 
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Review")
+    .setTitle("Murph Tournaments Review")
     .addFields(
       {
         name: "Submission ID",

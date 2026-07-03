@@ -7,6 +7,33 @@ Tournament website webhook sync uses:
 
 If `TOURNAMENT_WEBHOOK_URL` still points to `/api/tournament/update`, the bot will normalize it to `/api/webhooks/tournament` at runtime and log a warning once.
 
+
+## Branding and Discord setup configuration
+
+Phase 1 Murph Tournaments branding is controlled with optional environment variables.
+All values are safe defaults and no secrets should be committed.
+
+- `BOT_DISPLAY_NAME` - visible bot/community name. Defaults to `Murph Tournaments`.
+- `REGISTRATION_FORM_URL` - registration form opened by `/register`. Defaults to the current hosted Google Form URL.
+- `REGISTRATION_FORM_LABEL` - `/register` embed title. Defaults to `Murph Tournaments Registration`.
+- `TEAM_SETUP_AUDIT_REASON_PREFIX` - prefix used in Discord audit-log reasons for team role/channel setup. Defaults to `Murph Tournaments team setup`.
+- `TEAM_VOICE_CATEGORY_NAME` - optional generic voice category name fallback used when no community-specific mapping matches.
+- `COMMUNITY_VOICE_CATEGORY_MAP` - optional JSON object mapping a registration source/community label to a Discord voice category name. Example: `{"Murph Tournament Community":"Team Channels","7th Circle":"7th Circle Division"}`.
+
+Category resolution order is:
+
+1. `COMMUNITY_VOICE_CATEGORY_MAP` entry for the source/community label.
+2. `TEAM_VOICE_CATEGORY_NAME`.
+3. Legacy compatibility aliases below.
+4. Existing hard-coded legacy fallbacks for currently stored community labels.
+
+Legacy compatibility aliases retained for existing deployments:
+
+- `MY_DIVISION_VOICE_CATEGORY_NAME` - legacy alias for the existing `Murph Tournament Community` source/community label. If unset, that legacy label still falls back to `Murphs Division`.
+- `SEVENTH_CIRCLE_DIVISION_VOICE_CATEGORY_NAME` - legacy alias for the existing `7th Circle` source/community label. If unset, that legacy label still falls back to `7th Circle Division`.
+
+Do not rename existing source keys such as `dd_registration` or `7th-circle`; they are kept for stored sync state compatibility.
+
 ## Prisma setup for panel lifecycle models
 
 ### Why Prisma `P3005` happens in this repo

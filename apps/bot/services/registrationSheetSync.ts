@@ -106,7 +106,7 @@ export function getRegistrationSyncConfig(): RegistrationSyncConfig {
       sourceKey: "dd_registration",
       sourceLabel:
         process.env.GOOGLE_SHEET_REGISTRATION_LABEL?.trim() ||
-        "Development Division Registration Form",
+        "Murph Tournaments Registration Form",
       spreadsheetId: parseSpreadsheetId(process.env.GOOGLE_SHEET_REGISTRATION_ID),
       worksheetTitle:
         process.env.GOOGLE_SHEET_REGISTRATION_TAB?.trim() || undefined,

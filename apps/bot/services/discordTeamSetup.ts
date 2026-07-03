@@ -11,6 +11,7 @@ import { getRegistrationById } from "../storage/registrations";
 import { StoredTeam, updateTeamDiscordAssets } from "../storage/teams";
 import { getGuildConfig, upsertGuildConfig } from "../storage/guildConfig";
 import { createAuditLog } from "../storage/auditLog";
+import { buildTeamSetupAuditReason, resolveCommunityVoiceCategoryName } from "../helpers/branding";
 
 interface ResolvedGuildSetupConfig {
   teamLeaderRole: Role;
@@ -40,19 +41,8 @@ function getEnvRoleId(name: string): string | undefined {
   return process.env[name]?.trim() || undefined;
 }
 
-function getDivisionCategoryName(discordCommunity: string | null): string | null {
-  if (discordCommunity === "Murph Tournament Community") {
-    return process.env.MY_DIVISION_VOICE_CATEGORY_NAME?.trim() || "Murphs Division";
-  }
-
-  if (discordCommunity === "7th Circle") {
-    return (
-      process.env.SEVENTH_CIRCLE_DIVISION_VOICE_CATEGORY_NAME?.trim() ||
-      "7th Circle Division"
-    );
-  }
-
-  return null;
+function getVoiceCategoryName(discordCommunity: string | null): string | null {
+  return resolveCommunityVoiceCategoryName(discordCommunity);
 }
 
 async function resolveSetupConfig(guild: Guild): Promise<ResolvedGuildSetupConfig> {
@@ -115,20 +105,20 @@ async function resolveVoiceCategory(
   const submission = team.importedFromSubmissionId
     ? await getRegistrationById(team.importedFromSubmissionId)
     : null;
-  const divisionCategoryName = getDivisionCategoryName(
+  const voiceCategoryName = getVoiceCategoryName(
     submission?.discordCommunity ?? submission?.sourceLabel ?? null
   );
 
-  if (divisionCategoryName) {
+  if (voiceCategoryName) {
     const matchedCategory = guild.channels.cache.find(
       (channel): channel is CategoryChannel =>
         channel.type === ChannelType.GuildCategory &&
-        channel.name === divisionCategoryName
+        channel.name === voiceCategoryName
     );
 
     if (!matchedCategory) {
       throw new Error(
-        `Voice category "${divisionCategoryName}" was not found for ${submission?.discordCommunity ?? submission?.sourceLabel ?? "the submission source"}.`
+        `Voice category "${voiceCategoryName}" was not found for ${submission?.discordCommunity ?? submission?.sourceLabel ?? "the submission source"}.`
       );
     }
 
@@ -183,12 +173,14 @@ export async function ensureDiscordTeamSetup(
     (previousTeamName
       ? guild.roles.cache.find((role) => role.name === previousTeamName)
       : null);
+  const setupAuditReason = buildTeamSetupAuditReason(team.teamName);
+  const syncRenameReason = `Sync rename for ${team.teamName}`;
   const teamRole =
     existingRole ??
     (await guild.roles.create({
       name: team.teamName,
       mentionable: true,
-      reason: `Development Division setup for ${team.teamName}`,
+      reason: setupAuditReason,
     }));
 
   const roleAction = !existingRole
@@ -200,7 +192,7 @@ export async function ensureDiscordTeamSetup(
   if (roleAction === "renamed") {
     await teamRole.edit({
       name: team.teamName,
-      reason: `Sync rename for ${team.teamName}`,
+      reason: syncRenameReason,
     });
   }
 
@@ -276,7 +268,7 @@ export async function ensureDiscordTeamSetup(
         parent: voiceCategory?.id ?? null,
         userLimit: 4,
         permissionOverwrites,
-        reason: `Development Division setup for ${team.teamName}`,
+        reason: setupAuditReason,
       })
     : await guild.channels.create({
         name: team.teamName,
@@ -284,7 +276,7 @@ export async function ensureDiscordTeamSetup(
         parent: voiceCategory?.id,
         userLimit: 4,
         permissionOverwrites,
-        reason: `Development Division setup for ${team.teamName}`,
+        reason: setupAuditReason,
       });
 
   const voiceAction = !existingVoice
@@ -388,7 +380,7 @@ export async function ensureDiscordTeamSetup(
     try {
       await guildMember.roles.add(
         teamRole,
-        `Development Division setup for ${team.teamName}`
+        setupAuditReason
       );
       assigned.push(member.displayName);
     } catch (error) {

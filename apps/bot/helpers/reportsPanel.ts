@@ -33,7 +33,7 @@ export async function buildReportsPanel(
       : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1);
 
   const summaryEmbed = new EmbedBuilder()
-    .setTitle("Development Division Recent Reports")
+    .setTitle("Murph Tournaments Recent Reports")
       .setDescription(
       reports.length > 0
         ? `Latest informational team-leader result submissions (${filterLabel})`

@@ -159,7 +159,7 @@ export async function buildScrimPanel(params: {
               : "Use Looking for Scrim to start a new practice BO3 Final Round.";
 
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Scrim Panel")
+    .setTitle("Murph Tournaments Scrim Panel")
     .addFields(
       { name: "Team", value: team.teamName, inline: true },
       { name: "Status", value: statusLabel(activeStatus), inline: true },

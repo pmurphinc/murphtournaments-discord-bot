@@ -7,19 +7,22 @@ import {
   ButtonStyle,
 } from "discord.js";
 import { BotCommand } from "./types";
+import { getBotDisplayName, getRegistrationFormLabel, getRegistrationFormUrl } from "../helpers/branding";
 
 export const registerCommand: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("register")
-    .setDescription("Shows the Development Division registration link"),
+    .setDescription("Shows the Murph Tournaments registration link"),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const registrationUrl = "https://forms.gle/MzLNqg3YmPMk7gwK8";
+    const registrationUrl = getRegistrationFormUrl();
+    const registrationLabel = getRegistrationFormLabel();
+    const botDisplayName = getBotDisplayName();
 
     const embed = new EmbedBuilder()
-      .setTitle("Development Division Registration")
+      .setTitle(registrationLabel)
       .setDescription(
-        `Use the Google Form below to register your team for Development Division.\n\n${registrationUrl}`
+        `Use the form below to register your team for ${botDisplayName}.\n\n${registrationUrl}`
       );
 
     const row =
