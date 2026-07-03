@@ -17,7 +17,7 @@ export async function buildMatchPanel(
   const tournamentState = await getTournamentState();
 
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Match Panel")
+    .setTitle("Murph Tournaments Match Panel")
     .setDescription("Current assignment and reporting status for your team.")
     .addFields(
       { name: "Assigned Team", value: assignment.teamName, inline: true },

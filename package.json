@@ -1,11 +1,11 @@
 {
-  "name": "development-division-system",
+  "name": "murphtournaments-discord-bot",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "npm run prisma:generate && ts-node-dev --respawn --transpile-only apps/bot/index.ts",
-    "test": "node -r ts-node/register/transpile-only apps/bot/storage/standings.test.ts",
+    "test": "node -r ts-node/register/transpile-only apps/bot/storage/standings.test.ts && node -r ts-node/register/transpile-only apps/bot/helpers/branding.test.ts",
     "player:add:ospuze-gooner": "node -r ts-node/register/transpile-only apps/bot/scripts/addOspuzeGoonerToDatabase.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
@@ -16,7 +16,7 @@
     "prisma:db:push": "prisma db push",
     "postinstall": "npm run prisma:generate"
   },
-  "description": "This is a starter scaffold for a Discord-first tournament platform for **THE FINALS \u2013 Development Division**.",
+  "description": "Murph Tournaments Discord bot for THE FINALS tournament operations.",
   "main": "index.js",
   "directories": {
     "doc": "docs"

@@ -19,7 +19,7 @@ export const cycleresultsCommand: BotCommand = {
     ]);
 
     const embed = new EmbedBuilder()
-      .setTitle("Development Division FRP Results")
+      .setTitle("Murph Tournaments Tournament Results")
       .addFields(
         {
           name: "Cashout Bonus FRP",

@@ -15,7 +15,7 @@ export const standingsCommand: BotCommand = {
     const standings = await getStandings();
 
     const embed = new EmbedBuilder()
-      .setTitle("Development Division Standings")
+      .setTitle("Murph Tournaments Standings")
       .setDescription(
         standings.length > 0
           ? standings

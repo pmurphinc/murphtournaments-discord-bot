@@ -28,7 +28,7 @@ export const statusCommand: BotCommand = {
       .join("\n");
 
     const embed = new EmbedBuilder()
-      .setTitle("Development Division Status")
+      .setTitle("Murph Tournaments Status")
       .addFields(
         {
           name: "Tournament Status",

@@ -30,7 +30,7 @@ export async function buildReportPanel(
       : null;
 
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Result Report")
+    .setTitle("Murph Tournaments Result Report")
     .setDescription(
       assignment
         ? "Team leader informational Final Round report."

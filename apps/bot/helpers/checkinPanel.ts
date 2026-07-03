@@ -10,7 +10,7 @@ export async function buildCheckinPanel() {
   const tournamentState = await getTournamentState();
 
   const embed = new EmbedBuilder()
-    .setTitle("Development Division Check-In")
+    .setTitle("Murph Tournaments Check-In")
     .setDescription("Use the button below to update your team's event check-in state.")
     .addFields(
       {
