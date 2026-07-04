@@ -17,6 +17,7 @@ interface ResolvedGuildSetupConfig {
   teamLeaderRole: Role;
   playerRole: Role;
   adminRole: Role | null;
+  staffRole: Role | null;
   founderRole: Role | null;
   fallbackVoiceCategoryId: string | null;
 }
@@ -53,6 +54,7 @@ async function resolveSetupConfig(guild: Guild): Promise<ResolvedGuildSetupConfi
     storedConfig?.playerRoleId ?? getEnvRoleId("PLAYER_ROLE_ID");
   const adminRoleId =
     storedConfig?.adminRoleId ?? getEnvRoleId("ADMIN_ROLE_ID");
+  const staffRoleId = getEnvRoleId("STAFF_ROLE_ID");
   const founderRoleId =
     storedConfig?.founderRoleId ?? getEnvRoleId("FOUNDER_ROLE_ID");
   const fallbackVoiceCategoryId =
@@ -69,6 +71,10 @@ async function resolveSetupConfig(guild: Guild): Promise<ResolvedGuildSetupConfi
   const adminRole =
     (adminRoleId ? guild.roles.cache.get(adminRoleId) : null) ??
     guild.roles.cache.find((role) => role.name === "Admin") ??
+    null;
+  const staffRole =
+    (staffRoleId ? guild.roles.cache.get(staffRoleId) : null) ??
+    guild.roles.cache.find((role) => role.name === "Staff") ??
     null;
   const founderRole =
     (founderRoleId ? guild.roles.cache.get(founderRoleId) : null) ??
@@ -92,6 +98,7 @@ async function resolveSetupConfig(guild: Guild): Promise<ResolvedGuildSetupConfi
     teamLeaderRole,
     playerRole,
     adminRole,
+    staffRole,
     founderRole,
     fallbackVoiceCategoryId,
   };
@@ -247,6 +254,19 @@ export async function ensureDiscordTeamSetup(
         },
       ]
     : [];
+  const staffOverwrite = config.staffRole
+    ? [
+        {
+          id: config.staffRole.id,
+          type: OverwriteType.Role,
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.Connect,
+            PermissionsBitField.Flags.ManageChannels,
+          ],
+        },
+      ]
+    : [];
 
   const permissionOverwrites = [
     {
@@ -260,6 +280,7 @@ export async function ensureDiscordTeamSetup(
       allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect],
     },
     ...adminOverwrite,
+    ...staffOverwrite,
     ...founderOverwrite,
   ];
 

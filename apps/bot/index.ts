@@ -44,10 +44,12 @@ import { standingsCommand } from "./commands/standings";
 import { cycleresultsCommand } from "./commands/cycleresults";
 import { syncstatusCommand } from "./commands/syncstatus";
 import { scrimCommand } from "./commands/scrim";
+import { bracketCommand } from "./commands/bracket";
 import { handleButtonInteraction } from "./handlers/buttonHandler";
 import { handleCommandInteraction } from "./handlers/commandHandler";
 import { handleModalInteraction } from "./handlers/modalHandler";
 import { handleSelectMenuInteraction } from "./handlers/selectMenuHandler";
+import { handleBracketInteraction } from "./handlers/bracketInteractions";
 import { startRegistrationSheetSyncPolling } from "./services/registrationSheetSync";
 const commandList = [
   pingCommand,
@@ -66,6 +68,7 @@ const commandList = [
   cycleresultsCommand,
   syncstatusCommand,
   scrimCommand,
+  bracketCommand,
 ];
 
 const commands = commandList.map((cmd) => cmd.data.toJSON());
@@ -118,11 +121,17 @@ client.on("messageDelete", async (message) => {
 
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isButton()) {
+    if (await handleBracketInteraction(interaction)) {
+      return;
+    }
     await handleButtonInteraction(interaction);
     return;
   }
 
   if (interaction.isStringSelectMenu()) {
+    if (await handleBracketInteraction(interaction)) {
+      return;
+    }
     await handleSelectMenuInteraction(interaction);
     return;
   }

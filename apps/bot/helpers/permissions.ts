@@ -14,11 +14,12 @@ type ConfiguredRole = "admin" | "founder" | "teamLeader" | "player";
 // Founder is treated as a superset of admin access. These aliases are the
 // accepted human-managed Discord role names when a guild-specific role ID has
 // not been configured yet.
-const ADMIN_ROLE_NAME_ALIASES = ["Admin", "Admins", "Administrator"] as const;
-const FOUNDER_ROLE_NAME_ALIASES = ["Founder"] as const;
+const ADMIN_ROLE_NAME_ALIASES = ["ADMIN", "Admin", "Admins", "Administrator", "Staff"] as const;
+const FOUNDER_ROLE_NAME_ALIASES = ["Murph", "Founder"] as const;
 
 interface ResolvedRoleIds {
   adminRoleId: string | null;
+  staffRoleId: string | null;
   founderRoleId: string | null;
   teamLeaderRoleId: string | null;
   playerRoleId: string | null;
@@ -26,6 +27,7 @@ interface ResolvedRoleIds {
 
 interface MemberAccessFlags {
   isAdmin: boolean;
+  isStaff: boolean;
   isFounder: boolean;
   isTeamLeader: boolean;
   isPlayer: boolean;
@@ -36,6 +38,33 @@ type SupportedInteraction =
   | ButtonInteraction
   | ModalSubmitInteraction
   | StringSelectMenuInteraction;
+
+export function evaluateConfiguredRoleAccess(params: {
+  roleIds: Set<string>;
+  adminRoleId?: string | null;
+  staffRoleId?: string | null;
+  founderRoleId?: string | null;
+  roleNames: string[];
+  hasDiscordAdmin?: boolean;
+}) {
+  const normalizedNames = new Set(
+    params.roleNames.map((name) => name.trim().toLowerCase())
+  );
+  const hasAlias = (aliases: readonly string[]) =>
+    aliases.some((name) => normalizedNames.has(name.toLowerCase()));
+  const isStaff = params.staffRoleId
+    ? params.roleIds.has(params.staffRoleId)
+    : hasAlias(["Staff"]);
+  const isFounder = params.founderRoleId
+    ? params.roleIds.has(params.founderRoleId)
+    : hasAlias(FOUNDER_ROLE_NAME_ALIASES);
+  const isAdmin =
+    Boolean(params.hasDiscordAdmin) ||
+    (params.adminRoleId ? params.roleIds.has(params.adminRoleId) : hasAlias(ADMIN_ROLE_NAME_ALIASES)) ||
+    isStaff;
+
+  return { isAdmin, isStaff, isFounder };
+}
 
 export interface TeamLeaderAccessDebug {
   hasTeamRole: boolean;
@@ -141,6 +170,9 @@ export const slashCommandAccessPolicies: Record<string, CommandAccessPolicy> = {
   help: {},
   register: {},
   standings: {},
+  bracket: {
+    requiresGuild: true,
+  },
   team: {
     requiresGuild: true,
     allowedRoles: ["player", "teamLeader", "admin"],
@@ -225,7 +257,6 @@ async function ensureGuildRoleConfig(
     existingConfig?.adminRoleId ??
     getEnvRoleId("ADMIN_ROLE_ID") ??
     findRoleIdByName(roles, ADMIN_ROLE_NAME_ALIASES);
-
   const founderRoleId =
     existingConfig?.founderRoleId ??
     getEnvRoleId("FOUNDER_ROLE_ID") ??
@@ -267,6 +298,9 @@ async function resolveConfiguredRoleIds(
 
   return {
     adminRoleId: config?.adminRoleId ?? null,
+    staffRoleId:
+      getEnvRoleId("STAFF_ROLE_ID") ??
+      findRoleIdByName(roles, ["Staff"]),
     founderRoleId: config?.founderRoleId ?? null,
     teamLeaderRoleId: config?.teamLeaderRoleId ?? null,
     playerRoleId: config?.playerRoleId ?? null,
@@ -283,6 +317,7 @@ async function resolveMemberAccessFlags(
     PermissionFlagsBits.Administrator
   );
   const hasNamedAdminRole = Boolean(findRoleIdByName(roles, ADMIN_ROLE_NAME_ALIASES));
+  const hasNamedStaffRole = Boolean(findRoleIdByName(roles, ["Staff"]));
   const hasNamedFounderRole = Boolean(
     findRoleIdByName(roles, FOUNDER_ROLE_NAME_ALIASES)
   );
@@ -299,7 +334,11 @@ async function resolveMemberAccessFlags(
       hasDiscordAdmin ||
       (configuredRoles.adminRoleId
         ? roles.cache.has(configuredRoles.adminRoleId)
-        : hasNamedAdminRole),
+        : hasNamedAdminRole) ||
+      (configuredRoles.staffRoleId ? roles.cache.has(configuredRoles.staffRoleId) : hasNamedStaffRole),
+    isStaff: configuredRoles.staffRoleId
+      ? roles.cache.has(configuredRoles.staffRoleId)
+      : hasNamedStaffRole,
     isTeamLeader: configuredRoles.teamLeaderRoleId
       ? roles.cache.has(configuredRoles.teamLeaderRoleId)
       : hasNamedTeamLeaderRole,
@@ -414,6 +453,30 @@ export async function hasAdminCommandAccess(
     interaction.member.roles
   );
   return memberAccess.isAdmin;
+}
+
+export async function getBracketRoleAccessForInteraction(
+  interaction:
+    | ChatInputCommandInteraction
+    | ButtonInteraction
+    | ModalSubmitInteraction
+    | StringSelectMenuInteraction
+) {
+  if (!interaction.inCachedGuild()) {
+    return { isMurph: false, isStaff: false, isAdmin: false, isTeamLeader: false };
+  }
+
+  const memberAccess = await resolveMemberAccessFlags(
+    interaction.guildId,
+    interaction.member.roles
+  );
+
+  return {
+    isMurph: memberAccess.isFounder,
+    isStaff: memberAccess.isStaff,
+    isAdmin: memberAccess.isAdmin,
+    isTeamLeader: memberAccess.isTeamLeader,
+  };
 }
 
 export async function hasFounderCommandAccess(
