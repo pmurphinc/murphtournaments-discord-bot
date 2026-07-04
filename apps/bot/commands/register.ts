@@ -7,7 +7,7 @@ import {
   ButtonStyle,
 } from "discord.js";
 import { BotCommand } from "./types";
-import { getBotDisplayName, getRegistrationFormLabel, getRegistrationFormUrl } from "../helpers/branding";
+import { getActiveRegistrationLink } from "../services/registrationWebsite";
 
 export const registerCommand: BotCommand = {
   data: new SlashCommandBuilder()
@@ -15,23 +15,40 @@ export const registerCommand: BotCommand = {
     .setDescription("Shows the Murph Tournaments registration link"),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const registrationUrl = getRegistrationFormUrl();
-    const registrationLabel = getRegistrationFormLabel();
-    const botDisplayName = getBotDisplayName();
+    if (!interaction.guildId) {
+      await interaction.reply({
+        content: "Use /register inside the Discord server.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const registrationLink = await getActiveRegistrationLink(interaction.guildId);
+
+    if (!registrationLink) {
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("Murph Tournaments Registration")
+            .setDescription("Registration is not currently open. Check murphtournaments.com for the next event."),
+        ],
+        ephemeral: true,
+      });
+      return;
+    }
 
     const embed = new EmbedBuilder()
-      .setTitle(registrationLabel)
+      .setTitle("Murph Tournaments Registration")
       .setDescription(
-        `Use the form below to register your team for ${botDisplayName}.\n\n${registrationUrl}`
+        `Register for ${registrationLink.tournamentName} on the Murph Tournaments website.\n\n${registrationLink.url}`
       );
 
-    const row =
-      new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-          .setLabel("Open Registration Form")
-          .setStyle(ButtonStyle.Link)
-          .setURL(registrationUrl)
-      );
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setLabel(registrationLink.label)
+        .setStyle(ButtonStyle.Link)
+        .setURL(registrationLink.url)
+    );
 
     await interaction.reply({
       embeds: [embed],

@@ -6,7 +6,7 @@ import {
   GuildMemberRoleManager,
   StringSelectMenuBuilder,
 } from "discord.js";
-import { getRegistrationFormLabel, getRegistrationFormUrl } from "./branding";
+import { getActiveRegistrationLink } from "../services/registrationWebsite";
 import { buildTeamPanel } from "./teamPanel";
 import { getStandings } from "../storage/standings";
 import { listTournamentInstancesForGuild, syncTournamentInstancesForGuild, getTournamentInstanceLabel } from "../storage/tournamentInstances";
@@ -84,9 +84,31 @@ export function buildViewerTournamentSummaryPanelFromInstances(instances: Array<
   return withNavigation({ embeds: [new EmbedBuilder().setTitle(title).setDescription(instances.length ? instances.slice(0, 10).map((i) => `• ${getTournamentInstanceLabel(i as any)} — ${i.status} — ${i.currentStage ?? "Registration"}${i.currentCycle ? ` cycle ${i.currentCycle}` : ""}`).join("\n") : "No active tournament instances are available yet.")] });
 }
 
-export function buildRegisterPanel() {
-  const url = getRegistrationFormUrl();
-  return withNavigation({ embeds: [new EmbedBuilder().setTitle(getRegistrationFormLabel()).setDescription(`Use the form below to register your team.\n\n${url}`)], components: [new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setLabel("Open Registration Form").setStyle(ButtonStyle.Link).setURL(url))] });
+export async function buildRegisterPanel(guildId: string) {
+  const link = await getActiveRegistrationLink(guildId);
+
+  if (!link) {
+    return withNavigation({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("Murph Tournaments Registration")
+          .setDescription("Registration is not currently open. Check murphtournaments.com for the next event."),
+      ],
+    });
+  }
+
+  return withNavigation({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle("Murph Tournaments Registration")
+        .setDescription(`Register for ${link.tournamentName} on the Murph Tournaments website.\n\n${link.url}`),
+    ],
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setLabel(link.label).setStyle(ButtonStyle.Link).setURL(link.url)
+      ),
+    ],
+  });
 }
 
 export function buildInfoPanel() {
@@ -99,10 +121,6 @@ export function buildHelpPanel() {
 
 export async function buildBracketTeamPanel(userId: string, guildId: string, roles?: GuildMemberRoleManager) {
   return withNavigation(await buildTeamPanel(userId, guildId, roles));
-}
-
-export function buildTeamLeaderToolsPanel() {
-  return withNavigation({ embeds: [new EmbedBuilder().setTitle("Team Leader Tools").setDescription("Use My Team for check-in, result submission, and team status when the tournament stage permits it.")] });
 }
 
 export function buildStaffToolsPanel() {
