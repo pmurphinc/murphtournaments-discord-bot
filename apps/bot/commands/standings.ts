@@ -12,24 +12,32 @@ export const standingsCommand: BotCommand = {
     .setDescription("Shows current FRP standings"),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const standings = await getStandings();
+    await interaction.deferReply({ ephemeral: true });
 
-    const embed = new EmbedBuilder()
-      .setTitle("Murph Tournaments Standings")
-      .setDescription(
-        standings.length > 0
-          ? standings
-              .map(
-                (standing, index) =>
-                  `${index + 1}. ${standing.teamName} (${standing.tournamentInstanceName ?? "Unassigned"}) - ${standing.frp} FRP`
-              )
-              .join("\n")
-          : "No standings available."
-      );
+    try {
+      const standings = await getStandings();
 
-    await interaction.reply({
-      embeds: [embed],
-      ephemeral: true,
-    });
+      const embed = new EmbedBuilder()
+        .setTitle("Murph Tournaments Standings")
+        .setDescription(
+          standings.length > 0
+            ? standings
+                .map(
+                  (standing, index) =>
+                    `${index + 1}. ${standing.teamName} (${standing.tournamentInstanceName ?? "Unassigned"}) - ${standing.frp} FRP`
+                )
+                .join("\n")
+            : "No standings available."
+        );
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+    } catch (error) {
+      console.error("[standings-command] Failed to load standings:", error);
+      await interaction.editReply({
+        content: "Standings are not available yet.",
+      });
+    }
   },
 };

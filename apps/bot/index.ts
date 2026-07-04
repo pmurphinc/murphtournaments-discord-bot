@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, Interaction, REST, Routes } from "discord.js";
 import { initializePanelAutoUpdateService, unregisterPanelMessage } from "./services/panelAutoUpdateService";
 import {
   logResolvedDatabaseTarget,
@@ -119,30 +119,56 @@ client.on("messageDelete", async (message) => {
   unregisterPanelMessage(message.channelId, message.id);
 });
 
+async function replyToInteractionError(interaction: Interaction, error: unknown): Promise<void> {
+  console.error("[interaction] Unhandled interaction error:", error);
+
+  if (!interaction.isRepliable()) return;
+
+  const message = {
+    content: "Something went wrong while handling that interaction. Please try again.",
+    ephemeral: true,
+  };
+
+  try {
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp(message);
+      return;
+    }
+
+    await interaction.reply(message);
+  } catch (replyError) {
+    console.error("[interaction] Failed to send interaction error response:", replyError);
+  }
+}
+
 client.on("interactionCreate", async (interaction) => {
-  if (interaction.isButton()) {
-    if (await handleBracketInteraction(interaction)) {
+  try {
+    if (interaction.isButton()) {
+      if (await handleBracketInteraction(interaction)) {
+        return;
+      }
+      await handleButtonInteraction(interaction);
       return;
     }
-    await handleButtonInteraction(interaction);
-    return;
-  }
 
-  if (interaction.isStringSelectMenu()) {
-    if (await handleBracketInteraction(interaction)) {
+    if (interaction.isStringSelectMenu()) {
+      if (await handleBracketInteraction(interaction)) {
+        return;
+      }
+      await handleSelectMenuInteraction(interaction);
       return;
     }
-    await handleSelectMenuInteraction(interaction);
-    return;
-  }
 
-  if (interaction.isModalSubmit()) {
-    await handleModalInteraction(interaction);
-    return;
-  }
+    if (interaction.isModalSubmit()) {
+      await handleModalInteraction(interaction);
+      return;
+    }
 
-  if (!interaction.isChatInputCommand()) return;
-  await handleCommandInteraction(interaction, commandList);
+    if (!interaction.isChatInputCommand()) return;
+    await handleCommandInteraction(interaction, commandList);
+  } catch (error) {
+    await replyToInteractionError(interaction, error);
+  }
 });
 
 client.login(config.token);
