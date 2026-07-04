@@ -14,8 +14,7 @@ Phase 1 Murph Tournaments branding is controlled with optional environment varia
 All values are safe defaults and no secrets should be committed.
 
 - `BOT_DISPLAY_NAME` - visible bot/community name. Defaults to `Murph Tournaments`.
-- `REGISTRATION_FORM_URL` - registration form opened by `/register`. Defaults to the current hosted Google Form URL.
-- `REGISTRATION_FORM_LABEL` - `/register` embed title. Defaults to `Murph Tournaments Registration`.
+- `/register` and the `/bracket` registration menu link to the active tournament page on the Murph Tournaments website when a tournament instance is in registration-ready status.
 - `TEAM_SETUP_AUDIT_REASON_PREFIX` - prefix used in Discord audit-log reasons for team role/channel setup. Defaults to `Murph Tournaments team setup`.
 - `TEAM_VOICE_CATEGORY_NAME` - optional generic voice category name fallback used when no community-specific mapping matches.
 - `COMMUNITY_VOICE_CATEGORY_MAP` - optional JSON object mapping a registration source/community label to a Discord voice category name. Example: `{"Murph Tournament Community":"Team Channels","7th Circle":"7th Circle Division"}`.

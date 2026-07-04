@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import {
-  DEFAULT_REGISTRATION_FORM_URL,
   buildTeamSetupAuditReason,
   getBotDisplayName,
-  getRegistrationFormLabel,
-  getRegistrationFormUrl,
   getTeamSetupAuditReasonPrefix,
   parseCommunityVoiceCategoryMap,
   resolveCommunityVoiceCategoryName,
@@ -24,8 +21,6 @@ runTest("branding helper returns safe defaults", () => {
   const env = {} as NodeJS.ProcessEnv;
 
   assert.equal(getBotDisplayName(env), "Murph Tournaments");
-  assert.equal(getRegistrationFormUrl(env), DEFAULT_REGISTRATION_FORM_URL);
-  assert.equal(getRegistrationFormLabel(env), "Murph Tournaments Registration");
   assert.equal(getTeamSetupAuditReasonPrefix(env), "Murph Tournaments team setup");
   assert.equal(buildTeamSetupAuditReason("Alpha", env), "Murph Tournaments team setup for Alpha");
 });
@@ -33,14 +28,10 @@ runTest("branding helper returns safe defaults", () => {
 runTest("branding helper uses configured values", () => {
   const env = {
     BOT_DISPLAY_NAME: "Custom Bot",
-    REGISTRATION_FORM_URL: "https://example.test/register",
-    REGISTRATION_FORM_LABEL: "Custom Registration",
     TEAM_SETUP_AUDIT_REASON_PREFIX: "Custom setup",
   } as NodeJS.ProcessEnv;
 
   assert.equal(getBotDisplayName(env), "Custom Bot");
-  assert.equal(getRegistrationFormUrl(env), "https://example.test/register");
-  assert.equal(getRegistrationFormLabel(env), "Custom Registration");
   assert.equal(buildTeamSetupAuditReason("Bravo", env), "Custom setup for Bravo");
 });
 

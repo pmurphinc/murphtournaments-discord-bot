@@ -1,19 +1,9 @@
-export const DEFAULT_REGISTRATION_FORM_URL = "https://forms.gle/MzLNqg3YmPMk7gwK8";
-
 function readOptionalEnv(name: string, env: NodeJS.ProcessEnv = process.env): string | null {
   return env[name]?.trim() || null;
 }
 
 export function getBotDisplayName(env: NodeJS.ProcessEnv = process.env): string {
   return readOptionalEnv("BOT_DISPLAY_NAME", env) ?? "Murph Tournaments";
-}
-
-export function getRegistrationFormUrl(env: NodeJS.ProcessEnv = process.env): string {
-  return readOptionalEnv("REGISTRATION_FORM_URL", env) ?? DEFAULT_REGISTRATION_FORM_URL;
-}
-
-export function getRegistrationFormLabel(env: NodeJS.ProcessEnv = process.env): string {
-  return readOptionalEnv("REGISTRATION_FORM_LABEL", env) ?? "Murph Tournaments Registration";
 }
 
 export function getTeamSetupAuditReasonPrefix(env: NodeJS.ProcessEnv = process.env): string {

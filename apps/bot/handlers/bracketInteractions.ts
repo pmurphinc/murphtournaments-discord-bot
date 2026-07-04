@@ -8,7 +8,6 @@ import {
   buildMurphToolsPanel,
   buildRegisterPanel,
   buildStaffToolsPanel,
-  buildTeamLeaderToolsPanel,
   buildViewerStandingsPanel,
   buildViewerTournamentSummaryPanel,
 } from "../helpers/bracketPanel";
@@ -58,10 +57,10 @@ export async function handleBracketInteraction(interaction: BracketInteraction):
   else if (selected === "standings") await update(interaction, await buildViewerStandingsPanel());
   else if (selected === "status") await update(interaction, await buildViewerTournamentSummaryPanel(interaction.guildId, "Murph Tournaments Status"));
   else if (selected === "info") await update(interaction, buildInfoPanel());
-  else if (selected === "register") await update(interaction, buildRegisterPanel());
+  else if (selected === "register") await update(interaction, await buildRegisterPanel(interaction.guildId));
   else if (selected === "my_team") await update(interaction, await buildBracketTeamPanel(interaction.user.id, interaction.guildId, interaction.member.roles));
   else if (selected === "help") await update(interaction, buildHelpPanel());
-  else if (selected === "team_tools" && access.isTeamLeader) await update(interaction, buildTeamLeaderToolsPanel());
+  else if (selected === "team_tools" && access.isTeamLeader) await update(interaction, await buildBracketTeamPanel(interaction.user.id, interaction.guildId, interaction.member.roles));
   else if (selected === "staff_tools" && (access.isStaff || access.isAdmin || access.isMurph)) await update(interaction, buildStaffToolsPanel());
   else if (selected === "murph_tools" && access.isMurph) await update(interaction, await buildMurphToolsPanel(interaction.guildId));
   else await interaction.reply({ content: "This option is not available for your roles. Run /bracket again if your roles changed.", ephemeral: true });
