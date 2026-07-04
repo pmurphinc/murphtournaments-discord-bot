@@ -29,7 +29,6 @@ export function getBracketMenuItems(access: BracketRoleAccess): string[] {
     "Tournament Info",
     "Register",
     "My Team",
-    "Help / Rules",
   ];
   if (access.isTeamLeader) items.push("Team Leader Tools");
   if (access.isStaff || access.isAdmin || access.isMurph) items.push("Staff Tools");
@@ -45,7 +44,7 @@ export function buildBracketHomePanel(access: BracketRoleAccess) {
 
   const options = [
     ["live", "Live Bracket"], ["standings", "Standings"], ["status", "Tournament Status"], ["info", "Tournament Info"],
-    ["register", "Register"], ["my_team", "My Team"], ["help", "Help / Rules"],
+    ["register", "Register"], ["my_team", "My Team"],
   ];
   if (access.isTeamLeader) options.push(["team_tools", "Team Leader Tools"]);
   if (access.isStaff || access.isAdmin || access.isMurph) options.push(["staff_tools", "Staff Tools"]);
@@ -70,8 +69,13 @@ function withNavigation(panel: any) {
 }
 
 export async function buildViewerStandingsPanel() {
-  const standings = await getStandings();
-  return withNavigation({ embeds: [new EmbedBuilder().setTitle("Murph Tournaments Standings").setDescription(standings.length ? standings.map((s, i) => `${i + 1}. ${s.teamName} (${s.tournamentInstanceName ?? "Unassigned"}) - ${s.frp} FRP`).join("\n") : "No standings available.")] });
+  try {
+    const standings = await getStandings();
+    return withNavigation({ embeds: [new EmbedBuilder().setTitle("Murph Tournaments Standings").setDescription(standings.length ? standings.map((s, i) => `${i + 1}. ${s.teamName} (${s.tournamentInstanceName ?? "Unassigned"}) - ${s.frp} FRP`).join("\n") : "No standings available.")] });
+  } catch (error) {
+    console.error("[bracket-standings] Failed to load standings:", error);
+    return withNavigation({ embeds: [new EmbedBuilder().setTitle("Murph Tournaments Standings").setDescription("Standings are not available yet.")] });
+  }
 }
 
 export async function buildViewerTournamentSummaryPanel(guildId: string, title = "Murph Tournaments Live Bracket") {
@@ -115,8 +119,14 @@ export function buildInfoPanel() {
   return withNavigation({ embeds: [new EmbedBuilder().setTitle("Murph Tournaments Info").setDescription("Use this private menu for bracket views, standings, registration, team status, and permitted tournament tools.")] });
 }
 
-export function buildHelpPanel() {
-  return withNavigation({ embeds: [new EmbedBuilder().setTitle("Murph Tournaments Help / Rules").setDescription("Follow posted community tournament rules. For help, contact tournament staff in the Discord.")] });
+export function buildWebsiteTeamLookupUnavailablePanel() {
+  return withNavigation({
+    embeds: [
+      new EmbedBuilder()
+        .setTitle("Murph Tournaments Team Panel")
+        .setDescription("Team lookup is not connected to the Murph Tournaments website yet."),
+    ],
+  });
 }
 
 export async function buildBracketTeamPanel(userId: string, guildId: string, roles?: GuildMemberRoleManager) {
