@@ -7,7 +7,7 @@ import {
   ButtonStyle,
 } from "discord.js";
 import { BotCommand } from "./types";
-import { getActiveRegistrationLink } from "../services/registrationWebsite";
+import { getActiveRegistrationLink, REGISTRATION_CLOSED_MESSAGE } from "../services/registrationWebsite";
 
 export const registerCommand: BotCommand = {
   data: new SlashCommandBuilder()
@@ -23,16 +23,17 @@ export const registerCommand: BotCommand = {
       return;
     }
 
+    await interaction.deferReply({ ephemeral: true });
+
     const registrationLink = await getActiveRegistrationLink(interaction.guildId);
 
     if (!registrationLink) {
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [
           new EmbedBuilder()
             .setTitle("Murph Tournaments Registration")
-            .setDescription("Registration is not currently open. Check murphtournaments.com for the next event."),
+            .setDescription(REGISTRATION_CLOSED_MESSAGE),
         ],
-        ephemeral: true,
       });
       return;
     }
@@ -50,10 +51,9 @@ export const registerCommand: BotCommand = {
         .setURL(registrationLink.url)
     );
 
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [embed],
       components: [row],
-      ephemeral: true,
     });
   },
 };

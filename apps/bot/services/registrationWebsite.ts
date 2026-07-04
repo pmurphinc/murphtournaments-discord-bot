@@ -6,6 +6,9 @@ import {
 
 const DEFAULT_WEBSITE_ORIGIN = "https://murphtournaments.com";
 
+export const REGISTRATION_CLOSED_MESSAGE =
+  "Registration is not currently open. Check murphtournaments.com for the next event.";
+
 export interface ActiveRegistrationLink {
   url: string;
   label: string;
@@ -35,17 +38,25 @@ export function buildPublicTournamentUrl(tournamentId: number | string, env: Nod
 }
 
 export async function getActiveRegistrationLink(guildId: string): Promise<ActiveRegistrationLink | null> {
-  await syncTournamentInstancesForGuild(guildId);
-  const instances = await listTournamentInstancesForGuild(guildId);
-  const activeRegistration = instances.find(
-    (instance) => instance.status === TournamentInstanceStatus.REGISTRATION_READY
-  );
+  try {
+    await syncTournamentInstancesForGuild(guildId);
+    const instances = await listTournamentInstancesForGuild(guildId);
+    const activeRegistration = instances.find(
+      (instance) => instance.status === TournamentInstanceStatus.REGISTRATION_READY
+    );
 
-  if (!activeRegistration) return null;
+    if (!activeRegistration) return null;
 
-  return {
-    url: buildPublicTournamentUrl(activeRegistration.id),
-    label: "Open Tournament Registration",
-    tournamentName: activeRegistration.displayName ?? activeRegistration.name,
-  };
+    return {
+      url: buildPublicTournamentUrl(activeRegistration.id),
+      label: "Open Tournament Registration",
+      tournamentName: activeRegistration.displayName ?? activeRegistration.name,
+    };
+  } catch (error) {
+    console.error(
+      "[registration-website] Failed to resolve active registration tournament; treating registration as closed.",
+      error
+    );
+    return null;
+  }
 }

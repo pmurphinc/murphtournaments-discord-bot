@@ -6,7 +6,7 @@ import {
   GuildMemberRoleManager,
   StringSelectMenuBuilder,
 } from "discord.js";
-import { getActiveRegistrationLink } from "../services/registrationWebsite";
+import { getActiveRegistrationLink, REGISTRATION_CLOSED_MESSAGE } from "../services/registrationWebsite";
 import { buildTeamPanel } from "./teamPanel";
 import { getStandings } from "../storage/standings";
 import { listTournamentInstancesForGuild, syncTournamentInstancesForGuild, getTournamentInstanceLabel } from "../storage/tournamentInstances";
@@ -92,7 +92,7 @@ export async function buildRegisterPanel(guildId: string) {
       embeds: [
         new EmbedBuilder()
           .setTitle("Murph Tournaments Registration")
-          .setDescription("Registration is not currently open. Check murphtournaments.com for the next event."),
+          .setDescription(REGISTRATION_CLOSED_MESSAGE),
       ],
     });
   }
