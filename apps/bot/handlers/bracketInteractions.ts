@@ -57,7 +57,10 @@ export async function handleBracketInteraction(interaction: BracketInteraction):
   else if (selected === "standings") await update(interaction, await buildViewerStandingsPanel());
   else if (selected === "status") await update(interaction, await buildViewerTournamentSummaryPanel(interaction.guildId, "Murph Tournaments Status"));
   else if (selected === "info") await update(interaction, buildInfoPanel());
-  else if (selected === "register") await update(interaction, await buildRegisterPanel(interaction.guildId));
+  else if (selected === "register") {
+    await interaction.deferUpdate();
+    await interaction.editReply(await buildRegisterPanel(interaction.guildId));
+  }
   else if (selected === "my_team") await update(interaction, await buildBracketTeamPanel(interaction.user.id, interaction.guildId, interaction.member.roles));
   else if (selected === "help") await update(interaction, buildHelpPanel());
   else if (selected === "team_tools" && access.isTeamLeader) await update(interaction, await buildBracketTeamPanel(interaction.user.id, interaction.guildId, interaction.member.roles));
