@@ -28,6 +28,12 @@ export type ReportSubmissionStatusFilter =
   | "dismissed";
 
 export type TeamStageSubmissionType = "CASHOUT_PLACEMENT" | "FINAL_ROUND_SCORE";
+export type TeamStageName = "CASHOUT" | "FINAL_ROUND";
+
+const ACTIVE_TEAM_STAGE_STATUSES: InformationalReportStatus[] = [
+  InformationalReportStatus.pending,
+  InformationalReportStatus.reviewed,
+];
 
 export interface TeamStageSubmissionInput {
   tournamentInstanceId: number;
@@ -35,7 +41,7 @@ export interface TeamStageSubmissionInput {
   teamName: string;
   opponentTeamName: string;
   cycleNumber: number;
-  stageName: TournamentStage.CASHOUT | TournamentStage.FINAL_ROUND;
+  stageName: TeamStageName;
   submissionType: TeamStageSubmissionType;
   value: number;
   submittedByDiscordUserId: string;
@@ -164,7 +170,7 @@ function assertTeamStageValue(type: TeamStageSubmissionType, value: number): voi
 }
 
 function assertStageTypeAlignment(
-  stageName: TournamentStage.CASHOUT | TournamentStage.FINAL_ROUND,
+  stageName: TeamStageName,
   submissionType: TeamStageSubmissionType
 ): void {
   if (stageName === TournamentStage.CASHOUT && submissionType !== "CASHOUT_PLACEMENT") {
@@ -207,7 +213,7 @@ export async function createOrUpdateTeamStageSubmission(
         cycleNumber: input.cycleNumber,
         stageName: TournamentStage.CASHOUT,
         status: {
-          in: [InformationalReportStatus.pending, InformationalReportStatus.reviewed],
+          in: ACTIVE_TEAM_STAGE_STATUSES,
         },
         teamId: { not: input.teamId },
         score: `${input.value}`,
@@ -280,7 +286,7 @@ export async function getCurrentTeamStageSubmission(
   tournamentInstanceId: number,
   teamId: number,
   cycleNumber: number,
-  stageName: TournamentStage.CASHOUT | TournamentStage.FINAL_ROUND
+  stageName: TeamStageName
 ): Promise<StoredReportSubmission | null> {
   await ensureReportSubmissionTable();
 
@@ -304,7 +310,7 @@ export async function getCurrentTeamStageSubmission(
 export async function listCurrentStageTeamSubmissions(
   tournamentInstanceId: number,
   cycleNumber: number,
-  stageName: TournamentStage.CASHOUT | TournamentStage.FINAL_ROUND
+  stageName: TeamStageName
 ): Promise<StoredReportSubmission[]> {
   await ensureReportSubmissionTable();
   const activeTeamIds = (
@@ -346,9 +352,7 @@ export async function computeReservedCashoutPlacements(
 
   const reserved = submissions
     .filter((submission) =>
-      [InformationalReportStatus.pending, InformationalReportStatus.reviewed].includes(
-        submission.status as InformationalReportStatus
-      )
+      ACTIVE_TEAM_STAGE_STATUSES.includes(submission.status as InformationalReportStatus)
     )
     .filter((submission) => (excludeTeamId ? submission.teamId !== excludeTeamId : true))
     .map((submission) => Number(submission.score))
@@ -378,7 +382,7 @@ export async function approveTeamStageSubmission(
         stageName: TournamentStage.CASHOUT,
         score: existing.score,
         status: {
-          in: [InformationalReportStatus.pending, InformationalReportStatus.reviewed],
+          in: ACTIVE_TEAM_STAGE_STATUSES,
         },
       },
       orderBy: { submittedAt: "desc" },
