@@ -14,10 +14,14 @@
     "prisma:migrate:local": "npm run prisma:migrate:deploy && npm run prisma:generate",
     "prisma:setup": "npm run prisma:migrate:deploy && npm run prisma:generate",
     "prisma:db:push": "prisma db push",
-    "postinstall": "npm run prisma:generate"
+    "postinstall": "npm run prisma:generate",
+    "build": "npm run prisma:generate && tsc -p tsconfig.json",
+    "start": "node dist/apps/bot/index.js",
+    "build:railway": "npm run build",
+    "start:railway": "npm run prisma:migrate:deploy && node dist/apps/bot/index.js"
   },
   "description": "Murph Tournaments Discord bot for THE FINALS tournament operations.",
-  "main": "index.js",
+  "main": "dist/apps/bot/index.js",
   "directories": {
     "doc": "docs"
   },
