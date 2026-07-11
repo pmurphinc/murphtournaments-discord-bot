@@ -8,6 +8,33 @@ Tournament website webhook sync uses:
 If `TOURNAMENT_WEBHOOK_URL` still points to `/api/tournament/update`, the bot will normalize it to `/api/webhooks/tournament` at runtime and log a warning once.
 
 
+## Discord command status
+
+The production bot is currently intended primarily to stay online as an outbound messaging service for the Tournament Control Room (TCR). It should keep the Discord client logged in and preserve database access, scheduled jobs, tournament webhook sync, registration sheet sync, channel messaging, direct messaging, and other internal services used by TCR operations.
+
+User-facing Discord interactions are intentionally disabled by default:
+
+- Slash commands are not registered unless `DISCORD_COMMANDS_ENABLED=true` is explicitly set.
+- Startup always attempts to clear existing global application commands and guild application commands from configured guilds, so previously deployed commands disappear after Discord synchronization completes.
+- Button, select-menu, modal, autocomplete, context-menu, and other Discord interaction events are ignored while commands are disabled.
+- Newly generated invite links should not include the `applications.commands` OAuth scope while commands remain disabled. Keep bot permissions that allow normal message sending and direct messaging.
+
+Railway should set or leave this value as the production default:
+
+```sh
+DISCORD_COMMANDS_ENABLED=false
+```
+
+To safely restore commands later:
+
+1. Set `DISCORD_COMMANDS_ENABLED=true` only in the environment where commands should be tested.
+2. Set `DISCORD_GUILD_ID` to the target guild for guild command registration.
+3. Deploy and confirm command registration logs show `Guild slash commands registered`.
+4. Re-enable any invite URL generation outside this repository to include `applications.commands` only after commands are intentionally supported again.
+
+For startup cleanup of old guild commands, the bot checks `DISCORD_GUILD_IDS`, `DISCORD_COMMAND_CLEANUP_GUILD_IDS`, `DISCORD_DEV_GUILD_ID`, `DISCORD_TEST_GUILD_ID`, `DISCORD_PRODUCTION_GUILD_ID`, and `DISCORD_GUILD_ID`. Comma- or whitespace-separated lists are supported for the plural cleanup variables. No bot token, client secret, or guild ID should be committed to the repository.
+
+
 ## Branding and Discord setup configuration
 
 Phase 1 Murph Tournaments branding is controlled with optional environment variables.

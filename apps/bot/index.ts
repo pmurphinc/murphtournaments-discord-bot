@@ -10,10 +10,10 @@ import {
 const token = process.env.DISCORD_BOT_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
 const guildId = process.env.DISCORD_GUILD_ID;
+const discordCommandsEnabled = process.env.DISCORD_COMMANDS_ENABLED === "true";
 
 if (!token) throw new Error("Missing DISCORD_BOT_TOKEN");
 if (!clientId) throw new Error("Missing DISCORD_CLIENT_ID");
-if (!guildId) throw new Error("Missing DISCORD_GUILD_ID");
 
 validateBotPrismaClient();
 logResolvedDatabaseTarget();
@@ -51,6 +51,9 @@ import { handleModalInteraction } from "./handlers/modalHandler";
 import { handleSelectMenuInteraction } from "./handlers/selectMenuHandler";
 import { handleBracketInteraction } from "./handlers/bracketInteractions";
 import { startRegistrationSheetSyncPolling } from "./services/registrationSheetSync";
+// Dormant slash-command definitions are intentionally retained so commands can be
+// restored later by setting DISCORD_COMMANDS_ENABLED=true. They are not
+// registered or handled while commands are disabled.
 const commandList = [
   pingCommand,
   registerCommand,
@@ -73,24 +76,108 @@ const commandList = [
 
 const commands = commandList.map((cmd) => cmd.data.toJSON());
 
+function getGuildIdsForCommandCleanup(): string[] {
+  const rawValues = [
+    process.env.DISCORD_GUILD_IDS,
+    process.env.DISCORD_COMMAND_CLEANUP_GUILD_IDS,
+    process.env.DISCORD_DEV_GUILD_ID,
+    process.env.DISCORD_TEST_GUILD_ID,
+    process.env.DISCORD_PRODUCTION_GUILD_ID,
+    process.env.DISCORD_GUILD_ID,
+  ];
+
+  return Array.from(
+    new Set(
+      rawValues
+        .flatMap((value) => value?.split(/[\s,]+/) ?? [])
+        .map((value) => value.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+type CommandCleanupResult = {
+  globalRemoved: number;
+  guildRemoved: Array<{ guildId: string; removed: number }>;
+};
+
 const rest = new REST({ version: "10" }).setToken(config.token);
 
-async function registerCommands() {
-  try {
-    console.log("Clearing old global commands...");
-    await rest.put(Routes.applicationCommands(config.clientId), {
-      body: [],
+async function clearApplicationCommands(): Promise<CommandCleanupResult> {
+  const guildIds = getGuildIdsForCommandCleanup();
+  const result: CommandCleanupResult = { globalRemoved: 0, guildRemoved: [] };
+
+  const globalCommands = (await rest.get(
+    Routes.applicationCommands(config.clientId)
+  )) as Array<{ id: string }>;
+  result.globalRemoved = globalCommands.length;
+
+  await rest.put(Routes.applicationCommands(config.clientId), {
+    body: [],
+  });
+
+  for (const commandGuildId of guildIds) {
+    const guildCommands = (await rest.get(
+      Routes.applicationGuildCommands(config.clientId, commandGuildId)
+    )) as Array<{ id: string }>;
+
+    result.guildRemoved.push({
+      guildId: commandGuildId,
+      removed: guildCommands.length,
     });
 
-    console.log("Registering guild slash commands...");
-    await rest.put(
-      Routes.applicationGuildCommands(config.clientId, config.guildId),
-      { body: commands }
-    );
+    await rest.put(Routes.applicationGuildCommands(config.clientId, commandGuildId), {
+      body: [],
+    });
+  }
 
-    console.log("Guild slash commands registered.");
+  return result;
+}
+
+async function cleanupRegisteredCommandsOnStartup(): Promise<void> {
+  try {
+    const result = await clearApplicationCommands();
+    const guildSummary = result.guildRemoved.length
+      ? result.guildRemoved
+          .map(({ guildId, removed }) => `${guildId}:${removed}`)
+          .join(", ")
+      : "none configured";
+
+    console.log(
+      `[commands] Cleared Discord application commands. global_removed=${result.globalRemoved} guild_removed={${guildSummary}}`
+    );
   } catch (error) {
-    console.error("Failed to register commands:", error);
+    console.error(
+      "[commands] Failed to clear Discord application commands. Continuing startup so outbound TCR messaging remains available.",
+      error
+    );
+  }
+}
+
+async function registerCommands() {
+  if (!discordCommandsEnabled) {
+    console.log(
+      "[commands] DISCORD_COMMANDS_ENABLED is not true; slash command registration remains disabled."
+    );
+    return;
+  }
+
+  if (!config.guildId) {
+    console.warn(
+      "[commands] DISCORD_COMMANDS_ENABLED=true but DISCORD_GUILD_ID is missing; guild slash commands were not registered."
+    );
+    return;
+  }
+
+  try {
+    console.log("[commands] Registering guild slash commands...");
+    await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), {
+      body: commands,
+    });
+
+    console.log("[commands] Guild slash commands registered.");
+  } catch (error) {
+    console.error("[commands] Failed to register commands:", error);
   }
 }
 
@@ -109,6 +196,7 @@ async function initializePanelServices(): Promise<void> {
 client.once("ready", async () => {
   console.log(`Bot is online as ${client.user?.tag}`);
   await initializePanelServices();
+  await cleanupRegisteredCommandsOnStartup();
   await registerCommands();
   startRegistrationSheetSyncPolling(client);
 });
@@ -142,6 +230,13 @@ async function replyToInteractionError(interaction: Interaction, error: unknown)
 }
 
 client.on("interactionCreate", async (interaction) => {
+  if (!discordCommandsEnabled) {
+    console.log(
+      `[interaction] Ignored user-triggered Discord interaction while commands are disabled. type=${interaction.type}`
+    );
+    return;
+  }
+
   try {
     if (interaction.isButton()) {
       if (await handleBracketInteraction(interaction)) {
